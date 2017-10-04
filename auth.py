@@ -33,7 +33,6 @@ class SessionUniqueBackend(ModelBackend):
         # disconnect already created session, only a session per user is allowed
         # get all the active sessions
         for session in Session.objects.all():
-            print(session)
             try:
                 if int(session.get_decoded()['_auth_user_id']) == user.pk:
                     session.delete()
