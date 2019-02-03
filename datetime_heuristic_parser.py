@@ -7,14 +7,14 @@
 
 # python -m timeit -s "from datetime_euristic_parser. import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
 # 10000000 loops, best of 3: 0.0241 usec per loop
-
 import re
 import datetime
 
 DATE_FORMATS = ['%Y-%m-%d', 
                 '%d/%m/%Y', 
                 '%d/%m/%y']
-DATETIME_FORMATS = ['%Y-%m-%d %H:%M:%S', 
+DATETIME_FORMATS = ['%Y-%m-%d %H:%M:%S',
+                    '%Y-%m-%dT%H:%M:%S.%f', 
                     '%d/%m/%Y %H:%M:%S', 
                     '%d/%m/%y %H:%M:%S',
                     '%Y%m%d%H%M%SZ',
