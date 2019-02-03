@@ -1,3 +1,13 @@
+# benchmark:
+# python -m timeit -s "from django.utils.dateparse import parse_datetime" "parse_datetime('2019-02-03T17:27:58.645194')"
+# 10000 loops, best of 3: 32.7 usec per loop
+
+# python -m timeit -s "import datetime" "datetime.datetime.strptime('2019-02-03T17:27:58.645194', '%Y-%m-%dT%H:%M:%S.%f')"
+# 10000 loops, best of 3: 53.5 usec per loop
+
+# python -m timeit -s "from datetime_euristic_parser. import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
+# 10000000 loops, best of 3: 0.0241 usec per loop
+
 import re
 import datetime
 
@@ -53,7 +63,7 @@ def dateformat_insp(date_str):
 def datetimeformat_insp(date_str):
     return dformat_insp(date_str, DATETIME_FORMATS_REGEXP)
 
-def datetime_euristic_parser(value):
+def datetime_heuristic_parser(value):
     """
     value can be a datestring or a datetimestring
     returns all the parsed date or datetime object
@@ -77,7 +87,7 @@ if __name__ == '__main__':
         res = dateformat_insp(i) or datetimeformat_insp(i)
         if res:
             print('Parsing succesfull on "{}": {}'.format(i, res))
-            #print(datetime_euristic_parser(i))
+            #print(datetime_heuristic_parser(i))
         else:
             print('Parsing failed on "{}"'.format(i))
         print()
