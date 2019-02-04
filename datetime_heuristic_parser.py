@@ -6,7 +6,7 @@
 # 10000 loops, best of 3: 53.5 usec per loop
 
 # python3 -m timeit -s  "import sys, os; sys.path.append(os.getcwd()); from datetime_heuristic_parser import datetime_heuristic_parser; print(datetime_heuristic_parser('04/12/2018 09:7:4Z'))"
-# 10000000 loops, best of 3: 0.0241 usec per loop
+# 100000000 loops, best of 3: 0.00863 usec per loop
 import datetime
 import re
 import pytz
