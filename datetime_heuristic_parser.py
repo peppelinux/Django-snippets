@@ -5,7 +5,7 @@
 # python -m timeit -s "import datetime" "datetime.datetime.strptime('2019-02-03T17:27:58.645194', '%Y-%m-%dT%H:%M:%S.%f')"
 # 10000 loops, best of 3: 53.5 usec per loop
 
-# python -m timeit -s "from datetime_euristic_parser. import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
+# python -m timeit -s "from datetime_heuristic_parser import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
 # 10000000 loops, best of 3: 0.0241 usec per loop
 import re
 import datetime
@@ -38,7 +38,7 @@ def datetime_regexp_builder(formats):
         df_regexp = df
         for k,v in DATETIME_ELEMENTS_REGEXP.items():
             df_regexp = df_regexp.replace(k,v)
-        regexp_dict[df] = df_regexp+'$'
+        regexp_dict[df] = re.compile(df_regexp+'$')
     return regexp_dict
 
 DATE_FORMATS_REGEXP = datetime_regexp_builder(DATE_FORMATS)
