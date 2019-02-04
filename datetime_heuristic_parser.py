@@ -7,8 +7,9 @@
 
 # python -m timeit -s "from datetime_heuristic_parser import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
 # 10000000 loops, best of 3: 0.0241 usec per loop
-import re
 import datetime
+import re
+import pytz
 
 DATE_FORMATS = ['%Y-%m-%d', 
                 '%d/%m/%Y', 
@@ -18,8 +19,11 @@ DATETIME_FORMATS = ['%Y-%m-%d %H:%M:%S',
                     '%d/%m/%Y %H:%M:%S', 
                     '%d/%m/%y %H:%M:%S',
                     '%Y%m%d%H%M%SZ',
-                    '%Y%m%d%H%M%S.%fZ']
+                    '%Y%m%d%H%M%S.%fZ',
+                    '%Y-%m-%d-%H-%M-%S-%z',
+                    '%d/%m/%Y %H:%M:%S%z']
 # to be extended with all the matching patterns.
+# get them from https://docs.python.org/3/library/time.html#time.strftime
 DATETIME_ELEMENTS_REGEXP = {'%Y': '(?P<year>\d{4})',
                             '%y': '(?P<year>\d{2})',
                             '%m': '(?P<month>\d{1,2})',
@@ -27,9 +31,13 @@ DATETIME_ELEMENTS_REGEXP = {'%Y': '(?P<year>\d{4})',
                             '%H': '(?P<hour>\d{1,2})',
                             '%M': '(?P<minute>\d{1,2})',
                             '%S': '(?P<second>\d{1,2})',
-                            '%f': '(?P<microsecond>\d{6})'} # ...
-                     
-def datetime_regexp_builder(formats):
+                            '%f': '(?P<microsecond>\d{6})',
+                            '%z': '(?P<tzinfo>(Z)|([\sz\+\-]*)?[\d:]+)',
+                            # '%Z': EST, UTC... many others to do,
+                            } # ...
+
+
+def datetime_regexp_builder(formats, compiled=False):
     """
     formats = DATE_FORMAT of DATETIME_FORMAT
     """
@@ -38,11 +46,47 @@ def datetime_regexp_builder(formats):
         df_regexp = df
         for k,v in DATETIME_ELEMENTS_REGEXP.items():
             df_regexp = df_regexp.replace(k,v)
-        regexp_dict[df] = re.compile(df_regexp+'$')
+        regvalue = df_regexp+'$' 
+        regexp_dict[df] = re.compile(regvalue) if compiled else regvalue
     return regexp_dict
 
 DATE_FORMATS_REGEXP = datetime_regexp_builder(DATE_FORMATS)
 DATETIME_FORMATS_REGEXP = datetime_regexp_builder(DATETIME_FORMATS)
+
+
+class FixedOffset(datetime.tzinfo):
+    """
+    Fixed offset in minutes east from UTC. Taken from Python's docs.
+
+    Kept as close as possible to the reference version. __init__ was changed
+    to make its arguments optional, according to Python's requirement that
+    tzinfo subclasses can be instantiated without arguments.
+    """
+
+    def __init__(self, offset=None, name=None):
+        if offset is not None:
+            self.__offset = datetime.timedelta(minutes=offset)
+        if name is not None:
+            self.__name = name
+
+    def utcoffset(self, dt):
+        return self.__offset
+
+    def tzname(self, dt):
+        return self.__name
+
+    def dst(self, dt):
+        return ZERO
+
+    @classmethod
+    def get_fixed_timezone(cls, offset):
+        """Return a tzinfo instance with a fixed offset from UTC."""
+        if isinstance(offset, datetime.timedelta):
+            offset = offset.total_seconds() // 60
+        sign = '-' if offset < 0 else '+'
+        hhmm = '%02d%02d' % divmod(abs(offset), 60)
+        name = sign + hhmm
+        return cls(offset, name)
 
 def dformat_insp(date_str, format_regexp_dict, debug=False):
     """
@@ -53,7 +97,7 @@ def dformat_insp(date_str, format_regexp_dict, debug=False):
         if debug: print(date_str, f, p)
         match = re.match(p, date_str)
         if match:
-            res = (f, p, {k:int(v) for k,v in match.groupdict().items()})
+            res = (f, p, {k:v for k,v in match.groupdict().items()})
             insp_formats.append(res)
     return insp_formats
 
@@ -70,7 +114,25 @@ def datetime_heuristic_parser(value):
     """
     res = dateformat_insp(value) or \
           datetimeformat_insp(value)
-    return [datetime.datetime(**i[-1]) for i in res]
+    res_dicts_list = []
+    for i in res:
+        dt_dict = i[-1]
+        # timezone extraction
+        tzinfo = None
+        if dt_dict.get('tzinfo'):
+            tzinfo = dt_dict.pop('tzinfo')
+            if tzinfo == 'Z':
+                tzinfo = datetime.timezone.utc
+            elif tzinfo is not None:
+                offset_mins = int(tzinfo[-2:]) if len(tzinfo) > 3 else 0
+                offset = 60 * int(tzinfo[1:3]) + offset_mins
+                if tzinfo[0] == '-':
+                    offset = -offset
+                tzinfo = FixedOffset.get_fixed_timezone(offset)
+        dt_dict = {k: int(v) for k, v in dt_dict.items()}
+        res_dicts_list.append(dt_dict)
+        if tzinfo: dt_dict['tzinfo'] = tzinfo
+    return [datetime.datetime(**i) for i in res_dicts_list]
 
 # example
 if __name__ == '__main__':
@@ -78,14 +140,17 @@ if __name__ == '__main__':
              '04/12/2018 3:2:1',
              '2018-03-4 09:7:4',
              '2018-03-04T09:7:4.645194',
-             '20180304121940.948000Z']
+             '20180304121940.948000Z',
+             '2018-04-18-17-04-30-+01:00',
+             '04/12/2018 09:7:4Z']
     
     for i in tests: 
         res = dateformat_insp(i) or datetimeformat_insp(i)
         if res:
             print('Parsing succesfull on "{}": {}'.format(i, res))
-            #print(datetime_heuristic_parser(i))
+            print(datetime_heuristic_parser(i))
         else:
             print('Parsing failed on "{}"'.format(i))
+            print(DATETIME_ELEMENTS_REGEXP['%z'])
             raise Exception('Not a date or datetime')
         print()
