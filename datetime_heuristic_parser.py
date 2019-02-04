@@ -1,12 +1,12 @@
 # benchmark:
-# python -m timeit -s "from django.utils.dateparse import parse_datetime" "parse_datetime('2019-02-03T17:27:58.645194')"
+# python3 -m timeit -s "from django.utils.dateparse import parse_datetime" "parse_datetime('2019-02-03T17:27:58.645194')"
 # 10000 loops, best of 3: 32.7 usec per loop
 
-# python -m timeit -s "import datetime" "datetime.datetime.strptime('2019-02-03T17:27:58.645194', '%Y-%m-%dT%H:%M:%S.%f')"
+# python3 -m timeit -s "import datetime" "datetime.datetime.strptime('2019-02-03T17:27:58.645194', '%Y-%m-%dT%H:%M:%S.%f')"
 # 10000 loops, best of 3: 53.5 usec per loop
 
-# python -m timeit -s "from datetime_heuristic_parser import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
-# 10000000 loops, best of 3: 0.0241 usec per loop
+#python3 -m timeit -s  "import sys, os; sys.path.append(os.getcwd()); from datetime_heuristic_parser import datetime_heuristic_parser; datetime_heuristic_parser('2019-02-03T17:27:58.645194')"
+# 100000000 loops, best of 3: 0.00879 usec per loop
 import datetime
 import re
 import pytz
