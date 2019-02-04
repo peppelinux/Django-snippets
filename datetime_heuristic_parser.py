@@ -68,12 +68,9 @@ def datetime_heuristic_parser(value):
     value can be a datestring or a datetimestring
     returns all the parsed date or datetime object
     """
-    l = []
     res = dateformat_insp(value) or \
           datetimeformat_insp(value)
-    for i in res:
-        l.append(datetime.datetime(**i[-1]))
-    return l
+    return [datetime.datetime(**i[-1]) for i in res]
 
 # example
 if __name__ == '__main__':
@@ -90,4 +87,5 @@ if __name__ == '__main__':
             #print(datetime_heuristic_parser(i))
         else:
             print('Parsing failed on "{}"'.format(i))
+            raise Exception('Not a date or datetime')
         print()
