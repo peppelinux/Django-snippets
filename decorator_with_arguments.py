@@ -23,6 +23,6 @@ def redirect_if_authenticated(redirect_to):
             print("Arguements passed to decorator {}".format(redirect_to))
             if request.user.is_authenticated:
                 return HttpResponseRedirect(reverse(redirect_to))
-            function(*args, **kwargs)
+            return function(*args, **kwargs)
         return wrapper
     return inner_function
